@@ -70,7 +70,7 @@ https://<你的 PROJECT_REF>.supabase.co/functions/v1/add-expense
 
 ## 說明與常見狀況
 
-- **anon 金鑰放進公開 repo 安全嗎？** 這個 repo 是 private 的，但就算 public 也安全——它設計成可公開，真正保護資料的是 RLS。**service_role 金鑰完全不同，絕對不能外流**，只存在 Supabase 的 Edge Function 環境變數裡，不會出現在前端或 git 歷史。
+- **anon 金鑰放進公開 repo 安全嗎？** 這個 repo 是 public 的（GitHub Pages 免費方案的限制），但 anon 金鑰本來就設計成可以公開，真正保護資料的是 RLS。**service_role 金鑰完全不同，絕對不能外流**，只存在 Supabase 的 Edge Function 環境變數裡，不會出現在前端或 git 歷史。
 - **不想設定也能用**：`config.js` 留空時 App 就是純本機模式，沒有登入、只存這台，捷徑功能也就用不了。
 - **SHORTCUT_SECRET 要多長？** 建議 32 碼以上英數混合，外流的風險是別人能冒用你的 API 寫入假的花費紀錄（RLS 不會擋，因為 Edge Function 用的是 service_role），但看不到也改不了你其他資料。
 - **同步規則**：同一筆兩邊都改，以「較晚改的」為準。刪除也會同步。捷徑記的帳會直接寫進 Supabase，網頁下次同步（開啟時、每 30 秒、或切回前景）就會自動出現。
