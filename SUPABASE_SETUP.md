@@ -12,10 +12,10 @@
 ## A. 建立 Supabase 專案、建資料表
 
 1. 到 supabase.com → 用 GitHub 或 Google 登入 → **New project**，取名、設密碼、地區選 Singapore → 建立。
-2. 左下 **Project Settings → API**，記下：
+2. 左側 **Settings → API Keys**（找不到的話，點專案頁面上方的 **Connect** 按鈕也看得到 URL 和金鑰），記下：
    - **Project URL**（像 `https://abcdxyz.supabase.co`）
-   - **anon public** 金鑰
-   - **service_role** 金鑰（只在 Edge Function 用，絕對不要放進前端程式或公開 repo）
+   - **Publishable key**（舊名 `anon public`，功能一樣）
+   - **Secret key**（舊名 `service_role`，只在 Edge Function 用，絕對不要放進前端程式或公開 repo）
 3. 左邊 **SQL Editor → New query**，貼上 [`supabase/schema.sql`](supabase/schema.sql) 整份內容、按 **Run**，建好 `expenses` / `categories` 兩張表與 RLS 規則。
 
 ## B. 在 Google Cloud 開一組 OAuth 憑證（給網頁登入用）
@@ -38,12 +38,14 @@
 
 ```js
 export const SUPABASE_URL = 'https://abcdxyz.supabase.co'
-export const SUPABASE_ANON_KEY = '你的 anon public 金鑰'
+export const SUPABASE_ANON_KEY = '你的 Publishable key'
 ```
 
 ## D. 部署「捷徑記帳 API」（Edge Function）
 
 這支 API 讓 iOS 捷徑不用處理登入，直接用一組密鑰打 API 記帳。需要裝一次 [Supabase CLI](https://supabase.com/docs/guides/cli)。
+
+Edge Function 本身也需要知道 Secret key 才能繞過 RLS 直接寫入，這組會自動用專案內建的環境變數帶入，不用自己另外設定；你只需要設定以下兩個自訂密鑰：
 
 ```bash
 # 登入並連結專案（PROJECT_REF 在 Supabase 專案網址裡，例如 abcdxyz）
@@ -57,6 +59,8 @@ supabase secrets set OWNER_USER_ID=<網站登入後，設定頁「自訂分類�
 # 部署
 supabase functions deploy add-expense --no-verify-jwt
 ```
+
+> 注意：`supabase/functions/add-expense/index.ts` 裡讀的是 `SUPABASE_SERVICE_ROLE_KEY` 這個環境變數名稱，這是 Supabase Edge Function 執行環境**自動內建**的變數（對應到你專案的 Secret key），不用手動 `secrets set`，部署時就會自動生效。
 
 部署成功後，你的 API 網址會是：
 
