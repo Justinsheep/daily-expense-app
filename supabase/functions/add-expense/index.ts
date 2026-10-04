@@ -14,22 +14,27 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 const VALID_PAYMENT_METHODS = new Set(['linepay', 'applepay', 'cash', 'card', 'other'])
 
 Deno.serve(async (req) => {
-  if (req.method !== 'POST') {
+  if (req.method !== 'POST' && req.method !== 'GET') {
     return new Response('Method Not Allowed', { status: 405 })
   }
 
-  let body: Record<string, unknown>
-  try {
-    body = await req.json()
-  } catch {
-    return new Response(JSON.stringify({ error: 'Bad JSON' }), { status: 400 })
+  // 捷徑可以只用網址參數（?secret=...&amount=...）一個「取得 URL 的內容」方塊就記帳；
+  // POST 時另外帶 JSON body 也行，兩種來源合併，body 優先。
+  const body: Record<string, unknown> = Object.fromEntries(new URL(req.url).searchParams)
+  if (req.method === 'POST') {
+    try {
+      Object.assign(body, await req.json())
+    } catch {
+      // 沒有 body 或不是 JSON：只用網址參數
+    }
   }
 
   if (body.secret !== SHORTCUT_SECRET) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
   }
 
-  const amount = Number(body.amount)
+  // 金額可能是「NT$1,200」這種帶符號的文字，只留數字和小數點
+  const amount = Number(String(body.amount ?? '').replace(/[^0-9.]/g, ''))
   if (!Number.isFinite(amount) || amount <= 0) {
     return new Response(JSON.stringify({ error: 'Invalid amount' }), { status: 400 })
   }
