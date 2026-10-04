@@ -1,7 +1,7 @@
 # iOS 捷徑自動記帳設定
 
 前提：已經照 [SUPABASE_SETUP.md](SUPABASE_SETUP.md) 的 D 步驟部署好 `add-expense` API，手上有：
-- API 網址：`https://<PROJECT_REF>.supabase.co/functions/v1/add-expense`
+- API 網址：`https://uwmexneutkzzkqwsqjda.supabase.co/functions/v1/add-expense`
 - 你自己設的 `SHORTCUT_SECRET`
 
 以下兩個自動化請在「捷徑」App → 右下角「自動化」分頁 → 右上角 **+** → **建立個人自動化** 裡分別建立。
@@ -74,7 +74,7 @@ LINE Pay 通知的實際文字格式我無法在你的手機上確認，**①②
 在電腦終端機跑（把網址和密鑰換成你自己的）：
 
 ```bash
-curl -X POST "https://<PROJECT_REF>.supabase.co/functions/v1/add-expense" \
+curl -X POST "https://uwmexneutkzzkqwsqjda.supabase.co/functions/v1/add-expense" \
   -H "Content-Type: application/json" \
   -d '{"secret":"你的SHORTCUT_SECRET","amount":120,"category":"food","paymentMethod":"linepay","note":"測試"}'
 ```
