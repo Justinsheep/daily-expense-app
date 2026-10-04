@@ -16,6 +16,20 @@ https://uwmexneutkzzkqwsqjda.supabase.co/functions/v1/add-expense?secret=你的�
 
 > 我手邊沒有你的 iPhone 可以實測，LINE 錢包通知的實際文字格式請以你手機上的為準。
 
+## 0. 最懶的做法：用說的建立（iOS 27 + iPhone 15 Pro 以上）
+
+iOS 27 的捷徑 App 可以直接描述需求，由 Apple Intelligence 幫你組出自動化：**捷徑 → 自動化 → +** → 選「描述」（Describe）那個輸入框，貼上下面整句話，產生後檢查一遍、不對就用「描述修改」或手動調整。
+
+LINE 錢包：
+
+> 當我收到來自 LINE 的通知，且名稱包含「LINE錢包」、訊息包含「付款完成」時，立即執行：用裝置端模型取得通知內文中的付款金額並只輸出數字，然後用「取得 URL 的內容」開啟 `https://uwmexneutkzzkqwsqjda.supabase.co/functions/v1/add-expense?secret=你的密鑰&paymentMethod=linepay&amount=`，amount 後面接上模型輸出的金額。
+
+Apple Pay：
+
+> 當我用任何卡片完成 Apple Pay 交易時，立即執行：用「取得 URL 的內容」開啟 `https://uwmexneutkzzkqwsqjda.supabase.co/functions/v1/add-expense?secret=你的密鑰&paymentMethod=applepay&amount=`，amount 後面接交易金額，再加 `&note=` 接上商家名稱。
+
+產生後務必檢查三件事：觸發條件對不對、網址最後的金額有沒有接成「變數」（不是純文字）、開關是「立即執行」。
+
 ## 1. Apple Pay（全自動，靜默）
 
 1. 建立個人自動化 → **交易（Transaction）** → 選卡片（可全選）、類別全勾、不篩商家 → 下一步。
