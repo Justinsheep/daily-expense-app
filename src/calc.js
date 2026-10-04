@@ -1,6 +1,10 @@
 // 統計用的彙總函式。expenses 一律是 store.listExpenses() 回來的、已經過濾掉 deleted 的陣列。
 
-export const todayStr = () => new Date().toISOString().slice(0, 10)
+const pad2 = (n) => String(n).padStart(2, '0')
+export const todayStr = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
 export const dayKey = (d) => String(d || '').slice(0, 10)
 export const monthKey = (d) => String(d || '').slice(0, 7)
 export const yearKey = (d) => String(d || '').slice(0, 4)

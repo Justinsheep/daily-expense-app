@@ -1,4 +1,5 @@
 import { db } from './db'
+import { todayStr } from './calc'
 
 // 唯一的資料存取層。畫面一律透過 store.* 讀寫，不直接碰資料庫實作。
 
@@ -19,7 +20,7 @@ export const store = {
       category: e.category || 'other',
       note: e.note || '',
       paymentMethod: e.paymentMethod || 'other',
-      date: e.date || new Date().toISOString().slice(0, 10),
+      date: e.date || todayStr(),
       source: e.source || 'manual',
       id: uid(),
       deleted: false,

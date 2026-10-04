@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     category: String(body.category || 'other').slice(0, 40),
     note: String(body.note || '').slice(0, 200),
     paymentMethod,
-    date: /^\d{4}-\d{2}-\d{2}$/.test(String(body.date)) ? String(body.date) : new Date(now).toISOString().slice(0, 10),
+    date: /^\d{4}-\d{2}-\d{2}$/.test(String(body.date)) ? String(body.date) : new Date(now + 8 * 3600 * 1000).toISOString().slice(0, 10), // 台灣時間（UTC+8）的今天
     source: 'shortcut',
     deleted: false,
     createdAt: now,
