@@ -192,3 +192,12 @@ body {
 @media (max-width: 380px) {
   .chip-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ---- 編輯這筆 ---- */
+.edit-sheet {
+  background: var(--card); width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto;
+  border-radius: 18px 18px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow);
+}
+.expense-main.tappable { cursor: pointer; }
+.expense-row .expense-main { padding: 6px 0; }

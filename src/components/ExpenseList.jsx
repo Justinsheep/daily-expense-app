@@ -4,7 +4,7 @@ import { sumAmount } from '../calc'
 const fmt = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })
 const PAYMENT_LABEL = { linepay: 'LINE Pay', applepay: 'Apple Pay', cash: '現金', card: '信用卡', other: '其他' }
 
-export default function ExpenseList({ expenses, categories, onDelete, emptyText = '這天還沒有花費紀錄' }) {
+export default function ExpenseList({ expenses, categories, onDelete, onEdit, emptyText = '這天還沒有花費紀錄' }) {
   const total = sumAmount(expenses)
 
   return (
@@ -20,8 +20,8 @@ export default function ExpenseList({ expenses, categories, onDelete, emptyText 
         <ul className="expense-rows">
           {expenses.map((e) => (
             <li key={e.id} className="expense-row">
-              <span className="expense-icon">{categoryIcon(categories, e.category)}</span>
-              <div className="expense-main">
+              <span className="expense-icon" onClick={onEdit ? () => onEdit(e) : undefined}>{categoryIcon(categories, e.category)}</span>
+              <div className={'expense-main' + (onEdit ? ' tappable' : '')} onClick={onEdit ? () => onEdit(e) : undefined}>
                 <div className="expense-title">
                   {categoryLabel(categories, e.category)}
                   {e.note ? <span className="expense-note"> · {e.note}</span> : null}
@@ -31,7 +31,7 @@ export default function ExpenseList({ expenses, categories, onDelete, emptyText 
                   {e.source === 'shortcut' ? <span className="badge-shortcut">捷徑</span> : null}
                 </div>
               </div>
-              <span className="expense-amount">${fmt(e.amount)}</span>
+              <span className="expense-amount" onClick={onEdit ? () => onEdit(e) : undefined}>${fmt(e.amount)}</span>
               {onDelete && (
                 <button className="icon-btn ghost" onClick={() => onDelete(e.id)} aria-label="刪除">✕</button>
               )}

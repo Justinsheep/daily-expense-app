@@ -11,6 +11,7 @@ import ExpenseList from './components/ExpenseList'
 import MonthView from './components/MonthView'
 import YearView from './components/YearView'
 import SettingsView from './components/SettingsView'
+import EditExpenseModal from './components/EditExpenseModal'
 
 const TABS = [
   { key: 'add', label: '今日' },
@@ -22,6 +23,7 @@ const TABS = [
 export default function App() {
   const [tab, setTab] = useState('add')
   const [session, setSession] = useState(null)
+  const [editing, setEditing] = useState(null)
 
   const expenses = useLiveQuery(() => store.listExpenses(), [], [])
   const customCategories = useLiveQuery(() => store.listCategories(), [], [])
@@ -65,6 +67,9 @@ export default function App() {
   const deleteExpense = useCallback(async (id) => {
     await store.deleteExpense(id)
   }, [])
+  const updateExpense = useCallback(async (id, patch) => {
+    await store.updateExpense(id, patch)
+  }, [])
 
   const addCategory = useCallback(async (c) => { await store.addCategory(c) }, [])
   const deleteCategory = useCallback(async (id) => { await store.deleteCategory(id) }, [])
@@ -106,10 +111,10 @@ export default function App() {
               <span>今日已花</span>
               <span className="today-total">${todayTotal.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
             </div>
-            <ExpenseList expenses={todayList} categories={categories} onDelete={deleteExpense} />
+            <ExpenseList expenses={todayList} categories={categories} onDelete={deleteExpense} onEdit={setEditing} />
           </>
         )}
-        {tab === 'month' && <MonthView expenses={expenses} categories={categories} onDelete={deleteExpense} />}
+        {tab === 'month' && <MonthView expenses={expenses} categories={categories} onDelete={deleteExpense} onEdit={setEditing} />}
         {tab === 'year' && <YearView expenses={expenses} categories={categories} />}
         {tab === 'settings' && (
           <SettingsView
@@ -126,6 +131,16 @@ export default function App() {
           />
         )}
       </div>
+
+      {editing && (
+        <EditExpenseModal
+          expense={editing}
+          categories={categories}
+          onSave={updateExpense}
+          onDelete={deleteExpense}
+          onClose={() => setEditing(null)}
+        />
+      )}
 
       <nav className="tabbar">
         {TABS.map((t) => (

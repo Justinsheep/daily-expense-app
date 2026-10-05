@@ -11,7 +11,7 @@ function shiftMonth(month, delta) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-export default function MonthView({ expenses, categories, onDelete }) {
+export default function MonthView({ expenses, categories, onDelete, onEdit }) {
   const months = useMemo(() => availableMonths(expenses), [expenses])
   const [month, setMonth] = useState(monthKey(todayStr()))
 
@@ -35,7 +35,7 @@ export default function MonthView({ expenses, categories, onDelete }) {
         <CategoryBreakdown breakdown={breakdown} categories={categories} />
       </div>
 
-      <ExpenseList expenses={list} categories={categories} onDelete={onDelete} emptyText="這個月還沒有花費紀錄" />
+      <ExpenseList expenses={list} categories={categories} onDelete={onDelete} onEdit={onEdit}emptyText="這個月還沒有花費紀錄" />
     </div>
   )
 }
