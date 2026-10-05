@@ -35,7 +35,7 @@ body {
 .app {
   max-width: 560px;
   margin: 0 auto;
-  padding: 22px 16px 96px;
+  padding: 22px 16px 120px;
   animation: rise 0.35s ease both;
 }
 @keyframes rise { from { opacity: 0; } to { opacity: 1; } }
@@ -160,7 +160,7 @@ body {
 }
 .tabbar-btn {
   flex: 1; max-width: 140px; border: none; background: transparent; color: var(--muted);
-  font-size: 13px; font-weight: 600; padding: 8px 4px; border-radius: 10px; cursor: pointer;
+  font-size: 15px; font-weight: 600; min-height: 54px; padding: 8px 4px; border-radius: 12px; cursor: pointer;
 }
 .tabbar-btn.active { background: var(--accent-soft); color: var(--accent-ink); }
 
