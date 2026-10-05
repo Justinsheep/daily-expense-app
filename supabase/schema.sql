@@ -21,3 +21,16 @@ create table if not exists public.categories (
 alter table public.categories enable row level security;
 create policy "own categories" on public.categories
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- 商家對照：Apple Pay 回報的商家名稱 → 你想要的備註與分類
+create table if not exists public.merchant_rules (
+  user_id uuid not null references auth.users on delete cascade,
+  merchant text not null,
+  note text,
+  category text,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, merchant)
+);
+alter table public.merchant_rules enable row level security;
+create policy "own merchant_rules" on public.merchant_rules
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

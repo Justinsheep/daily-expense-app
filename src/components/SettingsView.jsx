@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 export default function SettingsView({
-  categories, onAddCategory, onDeleteCategory,
+  categories, onAddCategory, onDeleteCategory, rules = [], onDeleteRule,
   supabaseEnabled, session, onLogin, onLogout,
   onExport, onImport, onClearAll,
 }) {
@@ -52,6 +52,30 @@ export default function SettingsView({
           </ul>
         )}
       </div>
+
+      {rules.length > 0 && (
+        <div className="panel">
+          <h3 className="panel-title">商家對照</h3>
+          <p className="muted" style={{ fontSize: 12, margin: '0 0 8px' }}>
+            Apple Pay 回報的商家名稱 → 自動套用的備註與分類。在編輯畫面勾選「以後都自動套用」就會新增。
+          </p>
+          <ul className="expense-rows">
+            {rules.map((r) => {
+              const cat = categories.find((c) => c.key === r.category)
+              return (
+                <li key={r.merchant} className="expense-row">
+                  <span className="expense-icon">{cat?.icon || '🏷️'}</span>
+                  <div className="expense-main">
+                    <div className="expense-title">{r.merchant} → {r.note || '（不改備註）'}</div>
+                    <div className="expense-sub">{cat?.label || '（不改分類）'}</div>
+                  </div>
+                  <button className="icon-btn ghost" onClick={() => onDeleteRule(r.merchant)} aria-label="刪除">✕</button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
 
       {supabaseEnabled && (
         <div className="panel">

@@ -43,13 +43,30 @@ Deno.serve(async (req) => {
     ? String(body.paymentMethod)
     : 'other'
 
+  // 商家對照：在網站編輯畫面勾「以後這家店都套用」後會存進 merchant_rules，
+  // 之後同一個商家名稱（不分大小寫、去頭尾空白）刷進來就自動換成你設定的備註與分類。
+  const merchant = String(body.note || '').trim().slice(0, 200)
+  let ruleNote: string | null = null
+  let ruleCategory: string | null = null
+  if (merchant) {
+    const { data: rule } = await supabase
+      .from('merchant_rules')
+      .select('note, category')
+      .eq('user_id', OWNER_USER_ID)
+      .eq('merchant', merchant.toLowerCase())
+      .maybeSingle()
+    ruleNote = rule?.note || null
+    ruleCategory = rule?.category || null
+  }
+
   const now = Date.now()
   const id = crypto.randomUUID()
   const record = {
     id,
     amount,
-    category: String(body.category || 'other').slice(0, 40),
-    note: String(body.note || '').slice(0, 200),
+    category: String(body.category || ruleCategory || 'other').slice(0, 40),
+    note: (ruleNote ?? merchant).slice(0, 200),
+    merchant,
     paymentMethod,
     date: /^\d{4}-\d{2}-\d{2}$/.test(String(body.date)) ? String(body.date) : new Date(now + 8 * 3600 * 1000).toISOString().slice(0, 10), // 台灣時間（UTC+8）的今天
     source: 'shortcut',

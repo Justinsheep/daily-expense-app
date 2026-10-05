@@ -201,3 +201,5 @@ body {
 }
 .expense-main.tappable { cursor: pointer; }
 .expense-row .expense-main { padding: 6px 0; }
+.rule-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--ink); background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; }
+.rule-check input { margin-top: 2px; width: 18px; height: 18px; flex-shrink: 0; }

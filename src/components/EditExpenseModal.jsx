@@ -4,7 +4,7 @@ import { PAYMENT_METHODS } from '../categories'
 
 const fmt = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })
 
-export default function EditExpenseModal({ expense, categories, onSave, onDelete, onClose }) {
+export default function EditExpenseModal({ expense, categories, canSaveRule, onSave, onDelete, onClose }) {
   const [amount, setAmount] = useState(String(expense.amount))
   const [category, setCategory] = useState(expense.category)
   const [paymentMethod, setPaymentMethod] = useState(expense.paymentMethod)
@@ -12,11 +12,19 @@ export default function EditExpenseModal({ expense, categories, onSave, onDelete
   const [date, setDate] = useState(expense.date)
   const [showPad, setShowPad] = useState(false)
 
+  const [applyRule, setApplyRule] = useState(true)
+
+  // 商家的原始名稱：新紀錄有 merchant 欄位；舊紀錄當初的備註就是商家名稱
+  const merchant = (expense.merchant ?? expense.note ?? '').trim()
+  const canRule = canSaveRule && expense.source === 'shortcut' && !!merchant
+  const changedForRule = note !== (expense.note || '') || category !== expense.category
+
   const valid = Number(amount) > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date)
 
   function save() {
     if (!valid) return
-    onSave(expense.id, { amount: Number(amount), category, paymentMethod, note, date })
+    const rule = canRule && applyRule && changedForRule ? { merchant, note: note.trim(), category } : null
+    onSave(expense.id, { amount: Number(amount), category, paymentMethod, note, date, merchant: merchant || undefined }, rule)
     onClose()
   }
 
@@ -76,6 +84,13 @@ export default function EditExpenseModal({ expense, categories, onSave, onDelete
             <input type="text" value={note} onChange={(e) => setNote(e.target.value)} className="input" placeholder="例如：午餐" />
           </div>
         </div>
+
+        {canRule && changedForRule && (
+          <label className="rule-check">
+            <input type="checkbox" checked={applyRule} onChange={(e) => setApplyRule(e.target.checked)} />
+            <span>以後商家是「{merchant}」都自動套用這個備註和分類</span>
+          </label>
+        )}
 
         <div className="modal-actions">
           <button className="btn danger" onClick={remove}>刪除</button>

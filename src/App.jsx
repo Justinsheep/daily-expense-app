@@ -24,6 +24,7 @@ export default function App() {
   const [tab, setTab] = useState('add')
   const [session, setSession] = useState(null)
   const [editing, setEditing] = useState(null)
+  const [rules, setRules] = useState([])
 
   const expenses = useLiveQuery(() => store.listExpenses(), [], [])
   const customCategories = useLiveQuery(() => store.listCategories(), [], [])
@@ -67,9 +68,31 @@ export default function App() {
   const deleteExpense = useCallback(async (id) => {
     await store.deleteExpense(id)
   }, [])
-  const updateExpense = useCallback(async (id, patch) => {
+  const loadRules = useCallback(async () => {
+    if (!supabaseEnabled || !session) { setRules([]); return }
+    const { data } = await supabase.from('merchant_rules').select('merchant, note, category').order('updated_at', { ascending: false })
+    setRules(data || [])
+  }, [session])
+  useEffect(() => { loadRules() }, [loadRules])
+
+  const updateExpense = useCallback(async (id, patch, rule) => {
     await store.updateExpense(id, patch)
-  }, [])
+    if (rule && session) {
+      const { error } = await supabase.from('merchant_rules').upsert({
+        user_id: session.user.id,
+        merchant: rule.merchant.toLowerCase(),
+        note: rule.note || null,
+        category: rule.category || null,
+        updated_at: new Date().toISOString(),
+      })
+      if (error) alert('商家對照存不起來：' + error.message)
+      loadRules()
+    }
+  }, [session, loadRules])
+  const deleteRule = useCallback(async (merchant) => {
+    await supabase.from('merchant_rules').delete().eq('merchant', merchant)
+    loadRules()
+  }, [loadRules])
 
   const addCategory = useCallback(async (c) => { await store.addCategory(c) }, [])
   const deleteCategory = useCallback(async (id) => { await store.deleteCategory(id) }, [])
@@ -121,6 +144,8 @@ export default function App() {
             categories={categories}
             onAddCategory={addCategory}
             onDeleteCategory={deleteCategory}
+            rules={rules}
+            onDeleteRule={deleteRule}
             supabaseEnabled={supabaseEnabled}
             session={session}
             onLogin={login}
@@ -136,6 +161,7 @@ export default function App() {
         <EditExpenseModal
           expense={editing}
           categories={categories}
+          canSaveRule={!!session}
           onSave={updateExpense}
           onDelete={deleteExpense}
           onClose={() => setEditing(null)}
