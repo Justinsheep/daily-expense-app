@@ -1,13 +1,14 @@
 // iOS 捷徑打這支 API 來記一筆帳，不需要處理 Supabase 登入——
-// 用一組只有你自己知道的密鑰驗證，寫入時固定寫進你（OWNER_USER_ID）的帳號下。
+// 用「專屬密鑰」辨識是誰的帳：每個使用者在網站設定頁產生自己的密鑰（shortcut_tokens 表），
+// 另外保留舊的單人設定（SHORTCUT_SECRET + OWNER_USER_ID）當後備，原本的捷徑不用改。
 // 部署與設定步驟見專案根目錄的 SUPABASE_SETUP.md。
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const SHORTCUT_SECRET = Deno.env.get('SHORTCUT_SECRET')!
-const OWNER_USER_ID = Deno.env.get('OWNER_USER_ID')!
+const SHORTCUT_SECRET = Deno.env.get('SHORTCUT_SECRET')
+const OWNER_USER_ID = Deno.env.get('OWNER_USER_ID')
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 
@@ -29,7 +30,14 @@ Deno.serve(async (req) => {
     }
   }
 
-  if (body.secret !== SHORTCUT_SECRET) {
+  const secret = String(body.secret ?? '')
+  let userId: string | null = null
+  if (secret) {
+    const { data: tok } = await supabase.from('shortcut_tokens').select('user_id').eq('token', secret).maybeSingle()
+    userId = tok?.user_id ?? null
+    if (!userId && SHORTCUT_SECRET && OWNER_USER_ID && secret === SHORTCUT_SECRET) userId = OWNER_USER_ID
+  }
+  if (!userId) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
   }
 
@@ -52,7 +60,7 @@ Deno.serve(async (req) => {
     const { data: rule } = await supabase
       .from('merchant_rules')
       .select('note, category')
-      .eq('user_id', OWNER_USER_ID)
+      .eq('user_id', userId)
       .eq('merchant', merchant.toLowerCase())
       .maybeSingle()
     ruleNote = rule?.note || null
@@ -76,7 +84,7 @@ Deno.serve(async (req) => {
   }
 
   const { error } = await supabase.from('expenses').upsert({
-    user_id: OWNER_USER_ID,
+    user_id: userId,
     id,
     data: record,
     deleted: false,

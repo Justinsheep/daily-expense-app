@@ -12,6 +12,7 @@ import MonthView from './components/MonthView'
 import YearView from './components/YearView'
 import SettingsView from './components/SettingsView'
 import EditExpenseModal from './components/EditExpenseModal'
+import { newToken } from './shortcutText'
 
 const TABS = [
   { key: 'add', label: '今日' },
@@ -26,6 +27,7 @@ export default function App() {
   const [session, setSession] = useState(null)
   const [editing, setEditing] = useState(null)
   const [rules, setRules] = useState([])
+  const [token, setToken] = useState(null)
 
   const expenses = useLiveQuery(() => store.listExpenses(), [], [])
   const customCategories = useLiveQuery(() => store.listCategories(), [], [])
@@ -94,6 +96,24 @@ export default function App() {
     setRules(data || [])
   }, [session])
   useEffect(() => { loadRules() }, [loadRules])
+
+  const loadToken = useCallback(async () => {
+    if (!supabaseEnabled || !session) { setToken(null); return }
+    const { data } = await supabase.from('shortcut_tokens').select('token').maybeSingle()
+    setToken(data?.token || null)
+  }, [session])
+  useEffect(() => { loadToken() }, [loadToken])
+
+  // 產生（或重新產生）自己的捷徑密鑰；舊的會立刻失效
+  const createToken = useCallback(async () => {
+    if (!session) return
+    if (token && !confirm('重新產生後，手機上舊的捷徑會失效，需要用新的描述重建。確定嗎？')) return
+    const t = newToken()
+    await supabase.from('shortcut_tokens').delete().eq('user_id', session.user.id)
+    const { error } = await supabase.from('shortcut_tokens').insert({ token: t, user_id: session.user.id })
+    if (error) { alert('產生失敗：' + error.message); return }
+    setToken(t)
+  }, [session, token])
 
   const updateExpense = useCallback(async (id, patch, rule) => {
     await store.updateExpense(id, patch)
@@ -177,6 +197,8 @@ export default function App() {
             onAddCategory={addCategory}
             onDeleteCategory={deleteCategory}
             rules={rules}
+            token={token}
+            onCreateToken={createToken}
             onDeleteRule={deleteRule}
             supabaseEnabled={supabaseEnabled}
             session={session}

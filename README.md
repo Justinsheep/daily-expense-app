@@ -24,7 +24,8 @@ npm run dev      # 啟動，開瀏覽器到終端機印出的網址（通常 htt
 這是這個 App 存在的主要原因：刷 Apple Pay / LINE Pay 後不用手動開 App 輸入。
 
 - 需要先完成 [SUPABASE_SETUP.md](SUPABASE_SETUP.md)（雲端同步 + 捷徑要打的 API）
-- 再照 [SHORTCUTS.md](SHORTCUTS.md) 在手機上設定兩個自動化
+- 登入網站後到「設定 → 自動記帳」按「產生我的捷徑密鑰」，會給你兩句可以貼進 iPhone 捷徑「描述」的話（也可參考 [SHORTCUTS.md](SHORTCUTS.md)）
+- 多人可以共用同一個後端：每個人有自己的密鑰，帳會記進各自的帳號
 
 ## 檔案結構
 

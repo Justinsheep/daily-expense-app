@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { lineSentence, applePaySentence } from '../shortcutText'
 
 export default function SettingsView({
-  categories, onAddCategory, onDeleteCategory, rules = [], onDeleteRule,
+  categories, onAddCategory, onDeleteCategory, rules = [], onDeleteRule, token, onCreateToken,
   supabaseEnabled, session, onLogin, onLogout,
   onExport, onImport, onClearAll,
 }) {
@@ -95,6 +96,30 @@ export default function SettingsView({
         </div>
       )}
 
+      {supabaseEnabled && session && (
+        <div className="panel">
+          <h3 className="panel-title">自動記帳（iOS 捷徑）</h3>
+          {!token ? (
+            <>
+              <p className="muted" style={{ fontSize: 13, margin: '0 0 10px' }}>
+                產生你專屬的密鑰後，這裡會給你兩句話，貼進 iPhone「捷徑 → 自動化 → 描述」就能做出 LINE Pay、Apple Pay 的自動記帳。需要 iOS 27 與 iPhone 15 Pro 以上。
+              </p>
+              <button className="btn primary" onClick={onCreateToken}>產生我的捷徑密鑰</button>
+            </>
+          ) : (
+            <>
+              <p className="muted" style={{ fontSize: 13, margin: '0 0 10px' }}>
+                在 iPhone：捷徑 → 自動化 → ＋ → 描述，把下面整句貼進去。產生後檢查觸發條件，金額要是藍色變數。
+              </p>
+              <CopyBlock title="LINE Pay（LINE 錢包通知）" text={lineSentence(token)} />
+              <CopyBlock title="Apple Pay" text={applePaySentence(token)} />
+              <p className="muted" style={{ fontSize: 12 }}>密鑰只給自己用，不要分享。萬一外流可以重新產生，舊的會立刻失效。</p>
+              <button className="btn ghost" onClick={onCreateToken}>重新產生密鑰</button>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="panel">
         <h3 className="panel-title">備份</h3>
         <div className="field-row">
@@ -110,6 +135,26 @@ export default function SettingsView({
         <h3 className="panel-title">危險操作</h3>
         <button className="btn danger" onClick={onClearAll}>清空所有花費紀錄</button>
       </div>
+    </div>
+  )
+}
+
+function CopyBlock({ title, text }) {
+  const [copied, setCopied] = useState(false)
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      alert('複製失敗，請長按文字手動複製')
+    }
+  }
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div className="field-label" style={{ marginBottom: 4 }}>{title}</div>
+      <textarea className="input" readOnly rows={5} value={text} style={{ width: '100%', fontSize: 12 }} onFocus={(e) => e.target.select()} />
+      <button className="btn ghost" style={{ marginTop: 6 }} onClick={copy}>{copied ? '已複製' : '複製這句'}</button>
     </div>
   )
 }
