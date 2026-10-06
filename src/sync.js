@@ -14,6 +14,10 @@ export async function syncNow(userId) {
   if (!supabase || !userId || running) return
   running = true
   try {
+    // 同一個瀏覽器換帳號登入時，先清掉上一個帳號留在本機的資料，避免被上傳到新帳號
+    const last = (await db.settings.get('syncUserId'))?.value
+    if (last && last !== userId) await clearLocalData()
+    if (last !== userId) await db.settings.put({ key: 'syncUserId', value: userId })
     await syncTable('expenses', db.expenses, userId, true)
     await syncTable('categories', db.categories, userId, true)
   } catch (e) {
@@ -21,6 +25,22 @@ export async function syncNow(userId) {
   } finally {
     running = false
   }
+}
+
+// 清掉本機的花費與自訂分類（雲端資料不動）
+export async function clearLocalData() {
+  await db.transaction('rw', db.expenses, db.categories, async () => {
+    await Promise.all([db.expenses.clear(), db.categories.clear()])
+  })
+}
+
+// 登出：先把還沒上傳的變更同步上去，再清掉本機資料，下次登入會從雲端拉回來。
+// 共用手機或電腦時，下一個人才不會看到你的帳。
+export async function syncThenClearLocal(userId) {
+  while (running) await new Promise((r) => setTimeout(r, 100))
+  await syncNow(userId)
+  await clearLocalData()
+  await db.settings.delete('syncUserId')
 }
 
 export async function wipeCloud(userId) {

@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { store } from './store'
 import { supabase, supabaseEnabled } from './supabase'
-import { syncNow, wipeCloud } from './sync'
+import { syncNow, wipeCloud, syncThenClearLocal } from './sync'
 import { mergeCategories } from './categories'
 import { listForDay, todayStr, sumAmount, shiftDay, dayLabel } from './calc'
 import QuickAddForm from './components/QuickAddForm'
@@ -60,7 +60,12 @@ export default function App() {
   }, [session, expenses, customCategories])
 
   const login = () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } })
-  const logout = () => supabase.auth.signOut()
+  const logout = async () => {
+    if (session) await syncThenClearLocal(session.user.id)
+    setRules([])
+    setToken(null)
+    await supabase.auth.signOut()
+  }
 
   const dayList = useMemo(() => listForDay(expenses, viewDate), [expenses, viewDate])
   const dayTotal = sumAmount(dayList)
