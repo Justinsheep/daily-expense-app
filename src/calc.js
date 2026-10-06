@@ -64,3 +64,19 @@ export function availableMonths(expenses) {
   months.add(monthKey(todayStr()))
   return [...months].sort().reverse()
 }
+
+// 把 YYYY-MM-DD 往前/往後移 delta 天（用本地日期，不受時區影響）
+export function shiftDay(day, delta) {
+  const [y, m, d] = day.split('-').map(Number)
+  const t = new Date(y, m - 1, d + delta)
+  return `${t.getFullYear()}-${pad2(t.getMonth() + 1)}-${pad2(t.getDate())}`
+}
+
+const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
+export function dayLabel(day) {
+  const [y, m, d] = day.split('-').map(Number)
+  const wd = WEEKDAYS[new Date(y, m - 1, d).getDay()]
+  const today = todayStr()
+  const rel = day === today ? '今天' : day === shiftDay(today, -1) ? '昨天' : day === shiftDay(today, 1) ? '明天' : ''
+  return `${m}/${d}（${wd}）${rel}`
+}

@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { store } from './store'
 import { supabase, supabaseEnabled } from './supabase'
 import { syncNow, wipeCloud } from './sync'
 import { mergeCategories } from './categories'
-import { listForDay, todayStr, sumAmount } from './calc'
+import { listForDay, todayStr, sumAmount, shiftDay, dayLabel } from './calc'
 import QuickAddForm from './components/QuickAddForm'
 import ExpenseList from './components/ExpenseList'
 import MonthView from './components/MonthView'
@@ -22,6 +22,7 @@ const TABS = [
 
 export default function App() {
   const [tab, setTab] = useState('add')
+  const [viewDate, setViewDate] = useState(todayStr())
   const [session, setSession] = useState(null)
   const [editing, setEditing] = useState(null)
   const [rules, setRules] = useState([])
@@ -59,8 +60,27 @@ export default function App() {
   const login = () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } })
   const logout = () => supabase.auth.signOut()
 
-  const todayList = useMemo(() => listForDay(expenses, todayStr()), [expenses])
-  const todayTotal = sumAmount(todayList)
+  const dayList = useMemo(() => listForDay(expenses, viewDate), [expenses, viewDate])
+  const dayTotal = sumAmount(dayList)
+  const isToday = viewDate === todayStr()
+
+  // 左右滑動切換天：往右滑看前一天、往左滑看後一天；忽略在輸入框、彈出視窗裡的滑動
+  const touch = useRef(null)
+  const onTouchStart = (e) => {
+    if (e.target.closest('input, textarea, .modal-backdrop')) { touch.current = null; return }
+    const t = e.touches[0]
+    touch.current = { x: t.clientX, y: t.clientY }
+  }
+  const onTouchEnd = (e) => {
+    const s = touch.current
+    touch.current = null
+    if (!s) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - s.x
+    const dy = t.clientY - s.y
+    if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6) return
+    setViewDate((d) => shiftDay(d, dx > 0 ? -1 : 1))
+  }
 
   const addExpense = useCallback(async (e) => {
     await store.addExpense(e)
@@ -126,18 +146,30 @@ export default function App() {
         </div>
       </div>
 
-      <div className="tab-content">
+      <div
+        className="tab-content"
+        onTouchStart={tab === 'add' ? onTouchStart : undefined}
+        onTouchEnd={tab === 'add' ? onTouchEnd : undefined}
+      >
         {tab === 'add' && (
           <>
-            <QuickAddForm categories={categories} onSubmit={addExpense} />
-            <div className="panel today-summary">
-              <span>今日已花</span>
-              <span className="today-total">${todayTotal.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+            <div className="panel day-nav">
+              <button className="icon-btn" onClick={() => setViewDate(shiftDay(viewDate, -1))} aria-label="前一天">‹</button>
+              <button className="day-nav-label" onClick={() => setViewDate(todayStr())} aria-label="回到今天">
+                {dayLabel(viewDate)}
+                {!isToday && <span className="day-nav-back">點一下回今天</span>}
+              </button>
+              <button className="icon-btn" onClick={() => setViewDate(shiftDay(viewDate, 1))} disabled={isToday} aria-label="後一天">›</button>
             </div>
-            <ExpenseList expenses={todayList} categories={categories} onDelete={deleteExpense} onEdit={setEditing} />
+            <QuickAddForm categories={categories} date={viewDate} onDateChange={setViewDate} onSubmit={addExpense} />
+            <div className="panel today-summary">
+              <span>{isToday ? '今日已花' : '這天已花'}</span>
+              <span className="today-total">${dayTotal.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+            </div>
+            <ExpenseList expenses={dayList} categories={categories} onDelete={deleteExpense} onEdit={setEditing} />
           </>
         )}
-        {tab === 'month' && <MonthView expenses={expenses} categories={categories} onDelete={deleteExpense} onEdit={setEditing} />}
+        {tab === 'month' && <MonthView expenses={expenses} categories={categories} />}
         {tab === 'year' && <YearView expenses={expenses} categories={categories} />}
         {tab === 'settings' && (
           <SettingsView

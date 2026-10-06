@@ -203,3 +203,14 @@ body {
 .expense-row .expense-main { padding: 6px 0; }
 .rule-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--ink); background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; }
 .rule-check input { margin-top: 2px; width: 18px; height: 18px; flex-shrink: 0; }
+
+/* ---- 切換日期 ---- */
+.day-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; }
+.day-nav .icon-btn { width: 44px; height: 44px; font-size: 22px; }
+.day-nav-label {
+  flex: 1; border: none; background: transparent; cursor: pointer; font-family: var(--font-display);
+  font-size: 18px; font-weight: 700; color: var(--ink); display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0;
+}
+.day-nav-back { font-family: var(--font-sans); font-size: 11px; font-weight: 500; color: var(--accent-ink); }
+.stat-row { display: flex; justify-content: space-around; text-align: center; padding: 12px; }
+.stat-num { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
