@@ -20,9 +20,9 @@ https://uwmexneutkzzkqwsqjda.supabase.co/functions/v1/add-expense?secret=你的�
 
 iOS 27 的捷徑 App 可以直接描述需求，由 Apple Intelligence 幫你組出自動化：**捷徑 → 自動化 → +** → 選「描述」（Describe）那個輸入框，貼上下面整句話，產生後檢查一遍、不對就用「描述修改」或手動調整。
 
-LINE 錢包：
+LINE 錢包（金額和商店名稱各用一個裝置端模型抓）：
 
-> 當我收到來自 LINE 的通知，且名稱包含「LINE錢包」、訊息包含「付款完成」時，立即執行：用裝置端模型取得通知內文中的付款金額並只輸出數字，然後用「取得 URL 的內容」開啟 `https://uwmexneutkzzkqwsqjda.supabase.co/functions/v1/add-expense?secret=你的密鑰&paymentMethod=linepay&amount=`，amount 後面接上模型輸出的金額。
+> 當我收到來自 LINE 的通知，且名稱包含「LINE錢包」、訊息包含「付款完成」時，立即執行：先用裝置端模型，提示詞為「請從以下通知內文中提取付款金額，並只輸出純數字；如果內文是空的，或找不到付款金額，就只輸出 0：」後面接上通知的內文。再用另一個裝置端模型，提示詞為「請從以下通知內文中提取付款的商店名稱，只輸出商店名稱；如果內文是空的，或找不到商店名稱，就不要輸出任何字，不要猜測：」後面接上通知的內文。最後用「取得 URL 的內容」開啟 `https://<專案>.supabase.co/functions/v1/add-expense?secret=你的密鑰&paymentMethod=linepay&amount=`，amount 後面接第一個模型的回應，再加 `&note=` 接第二個模型的回應。
 
 Apple Pay：
 

@@ -10,7 +10,7 @@ export function newToken() {
 }
 
 export function lineSentence(token) {
-  return `當我收到來自 LINE 的通知，且名稱包含「LINE錢包」、訊息包含「付款完成」時，立即執行：用裝置端模型，提示詞為「請從以下通知內文中提取付款金額，並只輸出純數字；如果內文是空的，或找不到付款金額，就只輸出 0：」後面接上通知的內文。然後用「取得 URL 的內容」開啟 ${apiUrl()}?secret=${token}&paymentMethod=linepay&amount= ，amount 後面接上模型輸出的回應。`
+  return `當我收到來自 LINE 的通知，且名稱包含「LINE錢包」、訊息包含「付款完成」時，立即執行：先用裝置端模型，提示詞為「請從以下通知內文中提取付款金額，並只輸出純數字；如果內文是空的，或找不到付款金額，就只輸出 0：」後面接上通知的內文。再用另一個裝置端模型，提示詞為「請從以下通知內文中提取付款的商店名稱，只輸出商店名稱；如果內文是空的，或找不到商店名稱，就不要輸出任何字，不要猜測：」後面接上通知的內文。最後用「取得 URL 的內容」開啟 ${apiUrl()}?secret=${token}&paymentMethod=linepay&amount= ，amount 後面接第一個模型的回應，再加 &note= 接第二個模型的回應。`
 }
 
 export function applePaySentence(token) {
