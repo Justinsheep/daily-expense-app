@@ -16,6 +16,7 @@ export const PAYMENT_METHODS = [
   { key: 'applepay', label: 'Apple Pay' },
   { key: 'cash', label: '現金' },
   { key: 'card', label: '信用卡' },
+  { key: 'debit', label: '簽帳卡' },
   { key: 'other', label: '其他' },
 ]
 

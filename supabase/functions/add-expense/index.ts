@@ -12,7 +12,7 @@ const OWNER_USER_ID = Deno.env.get('OWNER_USER_ID')
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 
-const VALID_PAYMENT_METHODS = new Set(['linepay', 'applepay', 'cash', 'card', 'other'])
+const VALID_PAYMENT_METHODS = new Set(['linepay', 'applepay', 'cash', 'card', 'debit', 'other'])
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST' && req.method !== 'GET') {
@@ -50,6 +50,24 @@ Deno.serve(async (req) => {
   const paymentMethod = VALID_PAYMENT_METHODS.has(String(body.paymentMethod))
     ? String(body.paymentMethod)
     : 'other'
+
+  // via=notify：由銀行/錢包通知觸發的呼叫。實體感應刷卡時「感應觸發」已經記過同一筆，
+  // 銀行通知隨後又到，所以 10 分鐘內若已有同金額的捷徑紀錄就略過，避免記兩次。
+  if (String(body.via) === 'notify') {
+    const since = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    const { data: dup } = await supabase
+      .from('expenses')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('deleted', false)
+      .gte('updated_at', since)
+      .filter('data->>source', 'eq', 'shortcut')
+      .filter('data->>amount', 'eq', String(amount))
+      .limit(1)
+    if (dup && dup.length) {
+      return new Response(JSON.stringify({ ok: true, duplicate: true }), { headers: { 'Content-Type': 'application/json' } })
+    }
+  }
 
   // 商家對照：在網站編輯畫面勾「以後這家店都套用」後會存進 merchant_rules，
   // 之後同一個商家名稱（不分大小寫、去頭尾空白）刷進來就自動換成你設定的備註與分類。

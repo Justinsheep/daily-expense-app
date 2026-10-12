@@ -2,7 +2,7 @@ import { categoryIcon, categoryLabel } from '../categories'
 import { sumAmount } from '../calc'
 
 const fmt = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })
-const PAYMENT_LABEL = { linepay: 'LINE Pay', applepay: 'Apple Pay', cash: '現金', card: '信用卡', other: '其他' }
+const PAYMENT_LABEL = { linepay: 'LINE Pay', applepay: 'Apple Pay', cash: '現金', card: '信用卡', debit: '簽帳卡', other: '其他' }
 
 export default function ExpenseList({ expenses, categories, onDelete, onEdit, emptyText = '這天還沒有花費紀錄' }) {
   const total = sumAmount(expenses)
