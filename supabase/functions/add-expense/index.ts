@@ -51,24 +51,6 @@ Deno.serve(async (req) => {
     ? String(body.paymentMethod)
     : 'other'
 
-  // via=notify：由銀行/錢包通知觸發的呼叫。實體感應刷卡時「感應觸發」已經記過同一筆，
-  // 銀行通知隨後又到，所以 10 分鐘內若已有同金額的捷徑紀錄就略過，避免記兩次。
-  if (String(body.via) === 'notify') {
-    const since = new Date(Date.now() - 10 * 60 * 1000).toISOString()
-    const { data: dup } = await supabase
-      .from('expenses')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('deleted', false)
-      .gte('updated_at', since)
-      .filter('data->>source', 'eq', 'shortcut')
-      .filter('data->>amount', 'eq', String(amount))
-      .limit(1)
-    if (dup && dup.length) {
-      return new Response(JSON.stringify({ ok: true, duplicate: true }), { headers: { 'Content-Type': 'application/json' } })
-    }
-  }
-
   // 商家對照：在網站編輯畫面勾「以後這家店都套用」後會存進 merchant_rules，
   // 之後同一個商家名稱（不分大小寫、去頭尾空白）刷進來就自動換成你設定的備註與分類。
   const merchant = String(body.note || '').trim().slice(0, 200)
@@ -83,6 +65,40 @@ Deno.serve(async (req) => {
       .maybeSingle()
     ruleNote = rule?.note || null
     ruleCategory = rule?.category || null
+  }
+
+  // via=notify：由通知觸發的呼叫。同一筆付款可能有好幾個來源（實體感應、LINE 錢包通知、銀行 App 通知），
+  // 10 分鐘內若已有同金額的捷徑紀錄就不再新增；如果那筆沒有店名而這次有，就把店名、付款方式補進那筆。
+  if (String(body.via) === 'notify') {
+    const since = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    const { data: dup } = await supabase
+      .from('expenses')
+      .select('id, data')
+      .eq('user_id', userId)
+      .eq('deleted', false)
+      .gte('updated_at', since)
+      .filter('data->>source', 'eq', 'shortcut')
+      .filter('data->>amount', 'eq', String(amount))
+      .order('updated_at', { ascending: false })
+      .limit(1)
+    if (dup && dup.length) {
+      const existing = dup[0]
+      if (merchant && !String(existing.data?.merchant || existing.data?.note || '').trim()) {
+        const t = Date.now()
+        const data = {
+          ...existing.data,
+          merchant,
+          note: (ruleNote ?? merchant).slice(0, 200),
+          category: existing.data?.category && existing.data.category !== 'other' ? existing.data.category : (ruleCategory || existing.data?.category || 'other'),
+          paymentMethod,
+          updatedAt: t,
+        }
+        await supabase.from('expenses').update({ data, updated_at: new Date(t).toISOString() })
+          .eq('user_id', userId).eq('id', existing.id)
+        return new Response(JSON.stringify({ ok: true, merged: true, id: existing.id }), { headers: { 'Content-Type': 'application/json' } })
+      }
+      return new Response(JSON.stringify({ ok: true, duplicate: true }), { headers: { 'Content-Type': 'application/json' } })
+    }
   }
 
   const now = Date.now()
