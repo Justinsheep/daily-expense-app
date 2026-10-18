@@ -129,6 +129,33 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 })
   }
 
+  // 寫入後再對帳：兩個通知幾乎同時到時，上面的「先查再寫」兩邊都會以為沒有重複。
+  // 每個請求寫完都再查一次，10 分鐘內同金額有多筆就只留一筆（優先留有店名的，平手留 id 最小的），
+  // 其餘標成刪除。規則固定，所以同時執行的請求會得到一樣的結果，最後一定只剩一筆。
+  if (String(body.via) === 'notify') {
+    const since = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    const { data: rows } = await supabase
+      .from('expenses')
+      .select('id, data')
+      .eq('user_id', userId)
+      .eq('deleted', false)
+      .gte('updated_at', since)
+      .filter('data->>source', 'eq', 'shortcut')
+      .filter('data->>amount', 'eq', String(amount))
+    if (rows && rows.length > 1) {
+      const hasShop = (r: { data: Record<string, unknown> }) => !!String(r.data?.merchant || r.data?.note || '').trim()
+      const sorted = [...rows].sort((a, b) => (hasShop(b) ? 1 : 0) - (hasShop(a) ? 1 : 0) || String(a.id).localeCompare(String(b.id)))
+      const keep = sorted[0]
+      const t = Date.now()
+      for (const r of sorted.slice(1)) {
+        await supabase.from('expenses')
+          .update({ deleted: true, data: { ...r.data, deleted: true, updatedAt: t }, updated_at: new Date(t).toISOString() })
+          .eq('user_id', userId).eq('id', r.id)
+      }
+      return new Response(JSON.stringify({ ok: true, reconciled: true, id: keep.id }), { headers: { 'Content-Type': 'application/json' } })
+    }
+  }
+
   return new Response(JSON.stringify({ ok: true, id, amount: record.amount, category: record.category }), {
     headers: { 'Content-Type': 'application/json' },
   })
