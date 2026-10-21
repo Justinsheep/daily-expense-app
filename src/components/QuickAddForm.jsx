@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import NumberPad from './NumberPad'
 import { PAYMENT_METHODS } from '../categories'
+import { todayStr } from '../calc'
 
 const fmt = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })
 
@@ -62,7 +63,7 @@ export default function QuickAddForm({ categories, date, onDateChange, onSubmit 
       <div className="field-row">
         <div className="field">
           <span className="field-label">日期</span>
-          <input type="date" value={date} onChange={(e) => e.target.value && onDateChange(e.target.value)} className="input" />
+          <input type="date" value={date} max={todayStr()} onChange={(e) => e.target.value && e.target.value <= todayStr() && onDateChange(e.target.value)} className="input" />
         </div>
         <div className="field grow">
           <span className="field-label">備註（選填）</span>

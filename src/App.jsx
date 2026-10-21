@@ -24,6 +24,27 @@ const TABS = [
 export default function App() {
   const [tab, setTab] = useState('add')
   const [viewDate, setViewDate] = useState(todayStr())
+
+  // 網頁開著跨過午夜（手機常常這樣）時，原本停在「今天」的畫面要跟著換到新的今天，
+  // 否則記帳表單的日期會停在前一天
+  const lastToday = useRef(todayStr())
+  useEffect(() => {
+    const refreshToday = () => {
+      const now = todayStr()
+      if (now !== lastToday.current) {
+        setViewDate((d) => (d === lastToday.current ? now : d))
+        lastToday.current = now
+      }
+    }
+    const t = setInterval(refreshToday, 60000)
+    document.addEventListener('visibilitychange', refreshToday)
+    window.addEventListener('focus', refreshToday)
+    return () => {
+      clearInterval(t)
+      document.removeEventListener('visibilitychange', refreshToday)
+      window.removeEventListener('focus', refreshToday)
+    }
+  }, [])
   const [session, setSession] = useState(null)
   const [editing, setEditing] = useState(null)
   const [rules, setRules] = useState([])
@@ -86,7 +107,11 @@ export default function App() {
     const dx = t.clientX - s.x
     const dy = t.clientY - s.y
     if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6) return
-    setViewDate((d) => shiftDay(d, dx > 0 ? -1 : 1))
+    // 不能滑到未來：記帳表單的日期跟著畫面日期走，滑過頭會把帳記到明天
+    setViewDate((d) => {
+      const next = shiftDay(d, dx > 0 ? -1 : 1)
+      return next > todayStr() ? d : next
+    })
   }
 
   const addExpense = useCallback(async (e) => {
